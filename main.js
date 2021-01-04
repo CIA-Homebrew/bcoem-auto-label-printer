@@ -87,7 +87,7 @@ $(document).ready(() => {
       printWindow.document.write(`<html><head><title>Print Label</title></head><body style="${printCss}">${printHtml}${printHtml}</body></html>`)
       printWindow.document.close()
       printWindow.focus()
-      // printWindow.print()
+      printWindow.print()
       printWindow.close()
     })
 
@@ -108,7 +108,7 @@ $(document).ready(() => {
       $('#checkInStatus').addClass("alert-danger")
       $('#checkInStatus').text(`Error adding entry ${scannedEntry.entryNumber}: ${err}`)
 
-      table.cell(`#${entryNumber}`, 9).data("✗").draw()
+      table.cell(`#${scannedEntry.entryNumber}`, 9).data("✗").draw()
     })
 
     $('#scannerInput').focus()
