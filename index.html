@@ -80,8 +80,12 @@
         <!-- Entry Info Goes Here after loading -->
       </tbody>
     </table>
-    <button id="addEntryButton" class="btn btn-secondary">Add Entry</button>
-    <button id="importEntriesButton" class="btn btn-primary">Import Entries</button>
+    <div class="mt-2">
+      <button id="importEntriesButton" class="btn btn-primary">Import Entries (.xlsx)</button>
+      <button id="addEntryButton" class="btn btn-primary">Add Manual Entry</button>
+      <button id="deleteEntriesButton" class="btn btn-danger">Delete All Entries</button>
+      <button id="downloadEntryStatusButton" class="btn btn-secondary float-right">Download Entry Status</button>
+    </div>
   </div>
 
   <div class="modal" id="uploadFileModal" tabindex="-1" aria-hidden="true">
@@ -91,7 +95,7 @@
           <h5 class="modal-title">Upload Entries</h5>
         </div>
         <div class="modal-body">
-          <input type="file" id="entryFileUpload" accept=".xls,.xlsx,.csv,.ods,.txt"/>
+          <input type="file" id="entryFileUpload" accept=".xls,.xlsx,.xlsm,.csv,.ods,.txt"/>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -153,6 +157,23 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
           <button id="addManualEntry" type="button" class="btn btn-primary">Add Entry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="deleteEntriesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete All Entries</h5>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete all entries? This will clear local check in data and cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button id="confirmDeleteAllEntriesButton" type="button" class="btn btn-danger">Delete All</button>
         </div>
       </div>
     </div>
