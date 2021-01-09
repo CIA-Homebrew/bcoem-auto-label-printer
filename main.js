@@ -80,6 +80,31 @@ $(document).ready(() => {
       return
     }
 
+    Entries[scannedEntry.entryNumber].checkedIn = "Local"
+
+    if (bcoemConnected) {
+      const url = $('#competitionUrl').val()
+
+      checkInEntry(url, scannedEntry.entryNumber)
+      .then(entryNumber => {
+        $('#checkInStatus').attr('hidden', false)
+        $('#checkInStatus').removeClass("alert-warning alert-danger alert-primary")
+        $('#checkInStatus').addClass("alert-success")
+        $('#checkInStatus').text(`Entry ${entryNumber} checked in`)
+
+        Entries[entryNumber].checkedIn = "BCOEM"
+      })
+      .catch(err => {
+        $('#checkInStatus').attr('hidden', false)
+        $('#checkInStatus').removeClass("alert-warning alert-success alert-primary")
+        $('#checkInStatus').addClass("alert-danger")
+        $('#checkInStatus').text(`Error adding entry ${scannedEntry.entryNumber}: ${err}`)
+      })
+    }
+
+    table.cell(`#${scannedEntry.entryNumber}`, 9).data(Entries[scannedEntry.entryNumber].checkedIn).draw()
+    localStorage.setItem('Entries', JSON.stringify(Entries))
+
     const printCss="margin:0px;width:1in; height:1in; transform:rotate(90deg);display:flex;flex-direction:column;justify-content:space-around;align-items:center;font-size:9.5px;font-family:sans-serif;"
 
     boxes.forEach(boxId => {
@@ -107,34 +132,6 @@ $(document).ready(() => {
       printWindow.print()
       printWindow.close()
     })
-
-    Entries[scannedEntry.entryNumber].checkedIn = "Local"
-    table.cell(`#${scannedEntry.entryNumber}`, 9).data("Local").draw()
-    localStorage.setItem('Entries', JSON.stringify(Entries))
-
-    const url = $('#competitionUrl').val()
-
-    if (bcoemConnected) {
-      checkInEntry(url, scannedEntry.entryNumber)
-      .then(entryNumber => {
-        $('#checkInStatus').attr('hidden', false)
-        $('#checkInStatus').removeClass("alert-warning alert-danger alert-primary")
-        $('#checkInStatus').addClass("alert-success")
-        $('#checkInStatus').text(`Entry ${entryNumber} checked in`)
-
-        Entries[entryNumber].checkedIn = "BCOEM"
-        table.cell(`#${entryNumber}`, 9).data("BCOEM").draw()
-        localStorage.setItem('Entries', JSON.stringify(Entries))
-      })
-      .catch(err => {
-        $('#checkInStatus').attr('hidden', false)
-        $('#checkInStatus').removeClass("alert-warning alert-success alert-primary")
-        $('#checkInStatus').addClass("alert-danger")
-        $('#checkInStatus').text(`Error adding entry ${scannedEntry.entryNumber}: ${err}`)
-
-        table.cell(`#${scannedEntry.entryNumber}`, 9).data("✗").draw()
-      })
-    }
 
     $('#scannerInput').focus()
   })
