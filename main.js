@@ -23,9 +23,7 @@ const connectToBcoem = (url, password) => {
     method: "POST",
     data: form,
     crossDomain: true,
-    xhrFields: {
-      "Content-Type": "multipart/form-data"
-    }
+    contentType: 'multipart/form-data', 
   })
   .then(response => {
     if (response.includes("Password accepted.")) {
