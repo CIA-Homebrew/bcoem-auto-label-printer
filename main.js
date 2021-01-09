@@ -123,7 +123,7 @@ $(document).ready(() => {
       } else {
         printHtml += `
         <div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
-        <div>Cat: ${scannedEntry.category}${scannedEntry.subcat} &nbsp; Box: ${scannedEntry[boxId]}</div>
+        <div style="font-size:9px;">Box: ${scannedEntry[boxId]} &nbsp; Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
         <div>${boxId === 'box3' ? "Flight: 2nd Round" : boxId === 'box4' ? "Flight: BOS" : "FlightID: " + scannedEntry.flight}</div></div>`
       }
     
