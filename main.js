@@ -25,7 +25,9 @@ const connectToBcoem = (url, password) => {
     processData: false,
     contentType: false,
   })
-  .then(response => {
+  .then((response, status, xhr) => {
+    console.log(xhr, xhr.getResponseHeader("set-cookie"))
+
     if (response.includes("Password accepted.")) {
       return Promise.resolve("Connected")
     } else if (response.includes("Password incorrect.")) {
