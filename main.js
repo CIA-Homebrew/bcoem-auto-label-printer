@@ -22,12 +22,11 @@ const connectToBcoem = (url, password) => {
     url: `${url.replace(/\/+$/, "")}/qr.php?action=password-check`,
     method: "POST",
     data: form,
+    crossDomain: true,
     processData: false,
     contentType: false,
   })
-  .then((response, status, xhr) => {
-    console.log(xhr, xhr.getAllResponseHeaders())
-
+  .then(response => {
     if (response.includes("Password accepted.")) {
       return Promise.resolve("Connected")
     } else if (response.includes("Password incorrect.")) {
@@ -43,6 +42,7 @@ const checkInEntry = (url, entryNumber) => {
   {
     url: `${url.replace(/\/+$/, "")}/qr.php?action=update&id=${Number(entryNumber)}`,
     method: "POST",
+    crossDomain: true,
     xhrFields: {
       withCredentials: true
     }
