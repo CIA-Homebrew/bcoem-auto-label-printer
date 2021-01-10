@@ -36,7 +36,7 @@
 
   <div class="container mb-5">
     <div class="row">
-      <div class="col-6">
+      <div class="col-5">
         <h2>BCOEM Site Information</h2>
         <div class="mb-3">
           <label for="competitionUrl" class="form-label">Competition URL</label>
@@ -50,7 +50,9 @@
         <button id="BcoemConnectButton" class="btn btn-primary">Connect</button>
       </div>
 
-      <div class="col-6 d-flex flex-column align-items-center justify-content-around my-5">
+      <div class="col-2"></div>
+
+      <div class="col-4 d-flex flex-column align-items-center justify-content-around my-5">
         <div class="alert alert-warning" id="connectionStatus" role="alert">
           Disconnected
         </div>
@@ -95,7 +97,7 @@
           <h5 class="modal-title">Upload Entries</h5>
         </div>
         <div class="modal-body">
-          <input type="file" id="entryFileUpload" accept=".xls,.xlsx,.xlsm,.csv,.ods,.txt"/>
+          <input type="file" id="entryFileUpload" accept=".xls,.xlsx,.xlsm,.ods"/>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

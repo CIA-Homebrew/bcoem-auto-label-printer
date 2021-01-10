@@ -13,49 +13,37 @@ const MapUploadToKeys = {
 const boxes = ['box1', 'box2', 'box3', 'box4', 'record']
 const Entries = JSON.parse(localStorage.getItem('Entries')) || {}
 let bcoemConnected = false;
+let bcoemWindow = null;
+
+window.onbeforeunload = function(){
+  if (!bcoemWindow) return
+  bcoemWindow.close()
+}
 
 const connectToBcoem = (url, password) => {
-  const form = new FormData()
-  form.append("inputPassword", password)
+  bcoemWindow = window.open("", "BCOEM",'height=400,width=600');
+  const iframe = bcoemWindow.document
+  const loginForm = document.createElement('FORM')
+  iframe.body.appendChild(loginForm)
+  const passwordField = document.createElement("INPUT")
+  passwordField.setAttribute('type', 'text')
+  passwordField.setAttribute('value', password)
+  passwordField.setAttribute('name', 'inputPassword')
+  loginForm.appendChild(passwordField)
 
-  return $.ajax({
-    url: `${url.replace(/\/+$/, "")}/qr.php?action=password-check`,
-    method: "POST",
-    data: form,
-    crossDomain: true,
-    processData: false,
-    contentType: false,
-  })
-  .then(response => {
-    if (response.includes("Password accepted.")) {
-      return Promise.resolve("Connected")
-    } else if (response.includes("Password incorrect.")) {
-      return Promise.reject("Incorrect password")
-    }
+  loginForm.action = `${url.replace(/\/+$/, "")}/qr.php?action=password-check`
+  loginForm.method = "post"
+  loginForm.submit()
 
-    return Promise.reject("Connection Failure")
-  })
+  return Promise.resolve("Connected")
 }
 
 const checkInEntry = (url, entryNumber) => {
-  return $.ajax(
-  {
-    url: `${url.replace(/\/+$/, "")}/qr.php?action=update&id=${Number(entryNumber)}`,
-    method: "POST",
-    crossDomain: true,
-    xhrFields: {
-      withCredentials: true
-    }
-  })
-  .then(response => {
-    if (response.includes("is checked in.</strong></p>")) {
-      return Promise.resolve(entryNumber)
-    } else if (response.includes("please provide the correct password.")) {
-      return Promise.reject("Session Timed Out")
-    }
+  if (!bcoemWindow) return
 
-    return Promise.reject("Checkin Failure")
-  })
+  bcoemWindow.location.href = `${url.replace(/\/+$/, "")}/qr.php?action=update&id=${Number(entryNumber)}`
+
+  return Promise.resolve(entryNumber)
 }
 
 $(document).ready(() => {
@@ -83,6 +71,8 @@ $(document).ready(() => {
     }
 
     Entries[scannedEntry.entryNumber].checkedIn = "Local"
+    table.cell(`#${scannedEntry.entryNumber}`, 9).data(Entries[scannedEntry.entryNumber].checkedIn).draw()
+    localStorage.setItem('Entries', JSON.stringify(Entries))
 
     if (bcoemConnected) {
       const url = $('#competitionUrl').val()
@@ -95,6 +85,8 @@ $(document).ready(() => {
         $('#checkInStatus').text(`Entry ${entryNumber} checked in`)
 
         Entries[entryNumber].checkedIn = "BCOEM"
+        table.cell(`#${scannedEntry.entryNumber}`, 9).data(Entries[scannedEntry.entryNumber].checkedIn).draw()
+        localStorage.setItem('Entries', JSON.stringify(Entries))
       })
       .catch(err => {
         $('#checkInStatus').attr('hidden', false)
@@ -187,6 +179,7 @@ $(document).ready(() => {
     const password = $('#qr-checkin-password').val()
 
     if (bcoemConnected === true) {
+      bcoemWindow.close()
       bcoemConnected = false
       updateConnectionUi()
       $('#connectionStatus').text("Disconnected")
@@ -209,8 +202,11 @@ $(document).ready(() => {
   })
 
   $('#addManualEntry').on("click", () => {
-    table.row.add({
-      entryNumber: $("#addEntryNumber").val() || null,
+    const entryNumber = $("#addEntryNumber").val()
+    if (!entryNumber) return
+
+    Entries[entryNumber] = {
+      entryNumber,
       judgingNumber: $("#addJudgingNumber").val() || null,
       category: $("#addFlightNumber").val() || null,
       subcat: $("#addCategory").val() || null,
@@ -220,7 +216,9 @@ $(document).ready(() => {
       box3: $("#addBox3").val() || null,
       box4: $("#addBox4").val() || null,
       checkedIn: ""
-    }).draw()
+    }
+
+    table.row.add(Entries[entryNumber]).draw()
 
     $('#addEntryModal').modal('hide')
     $("#addEntryNumber").val('')
