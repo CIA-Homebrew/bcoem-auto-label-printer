@@ -14,6 +14,9 @@ const boxes = ['box1', 'box2', 'box3', 'box4', 'record']
 const Entries = JSON.parse(localStorage.getItem('Entries')) || {}
 let bcoemConnected = false;
 let bcoemWindow = null;
+let dymoConnected = false;
+let dymoPrinter = null;
+let dymoPrinterParams = null;
 
 window.onbeforeunload = function(){
   if (!bcoemWindow) return
@@ -46,7 +49,68 @@ const checkInEntry = (url, entryNumber) => {
   return Promise.resolve(entryNumber)
 }
 
+const printDefault = (scannedEntry) => {
+  const printCss="margin:0px;width:1in; height:1in; transform:rotate(90deg);display:flex;flex-direction:column;justify-content:space-around;align-items:center;font-size:9.5px;font-family:sans-serif;"
+
+  boxes.forEach(boxId => {
+    let printHtml = ''
+
+    if (boxId === 'record') {
+      printHtml += `<div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
+      <div>Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
+      <div>FOR RECORDS</div></div>`
+    } else if (scannedEntry[boxId] === null || scannedEntry[boxId] === undefined) {
+      printHtml += `<div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
+      <div>Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
+      <div>SPARE ENTRY</div></div>`
+    } else {
+      printHtml += `
+      <div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
+      <div style="font-size:9px;">Box: ${scannedEntry[boxId]} &nbsp; Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
+      <div>${boxId === 'box3' ? "Flight: 2nd Round" : boxId === 'box4' ? "Flight: BOS" : "FlightID: " + scannedEntry.flight}</div></div>`
+    }
+  
+    const printWindow = window.open('', 'PRINT', 'height=400,width=600')
+    printWindow.document.write(`<html><head><title>Print Label</title></head><body style="${printCss}">${printHtml}${printHtml}</body></html>`)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
+  })
+}
+
+const printDymo = (scannedEntry) => {
+  boxes.forEach(boxId => {
+    // const generatedXML = jQuery.parseXML(generateXML(scannedEntry, boxId))
+    const generatedXML = generateXML(scannedEntry, boxId)
+
+    label = dymo.label.framework.openLabelXml(generatedXML)
+
+    if (dymoPrinter) {
+      label.print(dymoPrinter)
+    }
+  })
+}
+
 $(document).ready(() => {
+  // Check if dymo connect framework is loaded and set flag
+  if(dymo.label.framework.init) {
+    dymo.label.framework.init()
+    const printerEnvironment = dymo.label.framework.checkEnvironment()
+    if (printerEnvironment.isFrameworkInstalled && printerEnvironment.isBrowserSupported ) {
+      // Make sure printer is connected
+      setTimeout(() => {
+        const printers = dymo.label.framework.getPrinters()
+        if (printers.length) {
+          dymoPrinter = printers[0].name
+          dymoPrinterParams = dymo.label.framework.createLabelWriterPrintParamsXml({copies:1,printQuality:'Text'});
+          dymoConnected = true
+          console.log("Connected to Dyno Framework and Label Printer", dymoPrinter)
+        }
+      }, 100)
+    }
+  }
+
   $('#scannerInput').focus()
 
   const table = $("#entry-table").DataTable({
@@ -99,33 +163,11 @@ $(document).ready(() => {
     table.cell(`#${scannedEntry.entryNumber}`, 9).data(Entries[scannedEntry.entryNumber].checkedIn).draw()
     localStorage.setItem('Entries', JSON.stringify(Entries))
 
-    const printCss="margin:0px;width:1in; height:1in; transform:rotate(90deg);display:flex;flex-direction:column;justify-content:space-around;align-items:center;font-size:9.5px;font-family:sans-serif;"
-
-    boxes.forEach(boxId => {
-      let printHtml = ''
-
-      if (boxId === 'record') {
-        printHtml += `<div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
-        <div>Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
-        <div>FOR RECORDS</div></div>`
-      } else if (scannedEntry[boxId] === null || scannedEntry[boxId] === undefined) {
-        printHtml += `<div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
-        <div>Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
-        <div>SPARE ENTRY</div></div>`
-      } else {
-        printHtml += `
-        <div><div style="font-weight:bolder;"># ${scannedEntry.judgingNumber}</div>
-        <div style="font-size:9px;">Box: ${scannedEntry[boxId]} &nbsp; Cat: ${scannedEntry.category}${scannedEntry.subcat}</div>
-        <div>${boxId === 'box3' ? "Flight: 2nd Round" : boxId === 'box4' ? "Flight: BOS" : "FlightID: " + scannedEntry.flight}</div></div>`
-      }
-    
-      const printWindow = window.open('', 'PRINT', 'height=400,width=600')
-      printWindow.document.write(`<html><head><title>Print Label</title></head><body style="${printCss}">${printHtml}${printHtml}</body></html>`)
-      printWindow.document.close()
-      printWindow.focus()
-      printWindow.print()
-      printWindow.close()
-    })
+    if (dymoConnected) {
+      printDymo(scannedEntry)
+    } else {
+      printDefault(scannedEntry)
+    }
 
     $('#scannerInput').focus()
   })
@@ -208,9 +250,9 @@ $(document).ready(() => {
     Entries[entryNumber] = {
       entryNumber,
       judgingNumber: $("#addJudgingNumber").val() || null,
-      category: $("#addFlightNumber").val() || null,
-      subcat: $("#addCategory").val() || null,
-      flight: $("#addSubcat").val() || null,
+      category: $("#addCategory").val() || null,
+      subcat: $("#addSubcat").val() || null,
+      flight: $("#addFlightNumber").val() || null,
       box1: $("#addBox1").val() || null,
       box2: $("#addBox2").val() || null,
       box3: $("#addBox3").val() || null,
@@ -318,3 +360,352 @@ $(document).ready(() => {
     reader.readAsArrayBuffer(f);
   }
 })
+
+const generateXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding="utf-8"?>
+<DesktopLabel Version="1">
+  <DYMOLabel Version="3">
+    <Description>DYMO Label</Description>
+    <Orientation>Landscape</Orientation>
+    <LabelName>Small30333</LabelName>
+    <InitialLength>0</InitialLength>
+    <BorderStyle>SolidLine</BorderStyle>
+    <DYMORect>
+      <DYMOPoint>
+        <X>0.1</X>
+        <Y>0.05666666</Y>
+      </DYMOPoint>
+      <Size>
+        <Width>0.84</Width>
+        <Height>0.9033334</Height>
+      </Size>
+    </DYMORect>
+    <BorderColor>
+      <SolidColorBrush>
+        <Color A="1" R="0" G="0" B="0"></Color>
+      </SolidColorBrush>
+    </BorderColor>
+    <BorderThickness>1</BorderThickness>
+    <Show_Border>False</Show_Border>
+    <DynamicLayoutManager>
+      <RotationBehavior>ClearObjects</RotationBehavior>
+      <LabelObjects>
+        <TextObject>
+          <Name>ITextObject0</Name>
+          <Brushes>
+            <BackgroundBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BackgroundBrush>
+            <BorderBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BorderBrush>
+            <StrokeBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </StrokeBrush>
+            <FillBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </FillBrush>
+          </Brushes>
+          <Rotation>Rotation0</Rotation>
+          <OutlineThickness>1</OutlineThickness>
+          <IsOutlined>False</IsOutlined>
+          <BorderStyle>SolidLine</BorderStyle>
+          <Margin>
+            <DYMOThickness Left="0" Top="0" Right="0" Bottom="0" />
+          </Margin>
+          <HorizontalAlignment>Left</HorizontalAlignment>
+          <VerticalAlignment>Top</VerticalAlignment>
+          <FitMode>None</FitMode>
+          <IsVertical>False</IsVertical>
+          <FormattedText>
+            <FitMode>None</FitMode>
+            <HorizontalAlignment>Left</HorizontalAlignment>
+            <VerticalAlignment>Top</VerticalAlignment>
+            <IsVertical>False</IsVertical>
+            <LineTextSpan>
+              <TextSpan>
+                <Text># ${scannedEntry.judgingNumber}</Text>
+                <FontInfo>
+                  <FontName>Segoe UI</FontName>
+                  <FontSize>10</FontSize>
+                  <IsBold>True</IsBold>
+                  <IsItalic>False</IsItalic>
+                  <IsUnderline>False</IsUnderline>
+                  <FontBrush>
+                    <SolidColorBrush>
+                      <Color A="1" R="0" G="0" B="0"></Color>
+                    </SolidColorBrush>
+                  </FontBrush>
+                </FontInfo>
+              </TextSpan>
+            </LineTextSpan>
+          </FormattedText>
+          <ObjectLayout>
+            <DYMOPoint>
+              <X>0.1</X>
+              <Y>0.03</Y>
+            </DYMOPoint>
+            <Size>
+              <Width>0.81</Width>
+              <Height>0.2223911</Height>
+            </Size>
+          </ObjectLayout>
+        </TextObject>
+        <TextObject>
+          <Name>ITextObject1</Name>
+          <Brushes>
+            <BackgroundBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BackgroundBrush>
+            <BorderBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BorderBrush>
+            <StrokeBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </StrokeBrush>
+            <FillBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </FillBrush>
+          </Brushes>
+          <Rotation>Rotation0</Rotation>
+          <OutlineThickness>1</OutlineThickness>
+          <IsOutlined>False</IsOutlined>
+          <BorderStyle>SolidLine</BorderStyle>
+          <Margin>
+            <DYMOThickness Left="0" Top="0" Right="0" Bottom="0" />
+          </Margin>
+          <HorizontalAlignment>Left</HorizontalAlignment>
+          <VerticalAlignment>Top</VerticalAlignment>
+          <FitMode>None</FitMode>
+          <IsVertical>False</IsVertical>
+          <FormattedText>
+            <FitMode>None</FitMode>
+            <HorizontalAlignment>Left</HorizontalAlignment>
+            <VerticalAlignment>Top</VerticalAlignment>
+            <IsVertical>False</IsVertical>
+            <LineTextSpan>
+              <TextSpan>
+                <Text>${scannedEntry[boxId] && boxId !== "records" ? "Box:" : ""}${scannedEntry[boxId] || ""} Cat:${scannedEntry.category}${scannedEntry.subcat}</Text>
+                <FontInfo>
+                  <FontName>Segoe UI</FontName>
+                  <FontSize>8</FontSize>
+                  <IsBold>False</IsBold>
+                  <IsItalic>False</IsItalic>
+                  <IsUnderline>False</IsUnderline>
+                  <FontBrush>
+                    <SolidColorBrush>
+                      <Color A="1" R="0" G="0" B="0"></Color>
+                    </SolidColorBrush>
+                  </FontBrush>
+                </FontInfo>
+              </TextSpan>
+            </LineTextSpan>
+            <LineTextSpan>
+              <TextSpan>
+                <Text>${boxId === 'record' ? "FOR RECORDS" : (scannedEntry[boxId] === null || scannedEntry[boxId] === undefined) ? "SPARE ENTRY" : boxId === 'box3' ? "Flight: 2nd Round" : boxId === 'box4' ? "Flight: BOS" : "FlightID: " + scannedEntry.flight}</Text>
+                <FontInfo>
+                  <FontName>Segoe UI</FontName>
+                  <FontSize>8</FontSize>
+                  <IsBold>False</IsBold>
+                  <IsItalic>False</IsItalic>
+                  <IsUnderline>False</IsUnderline>
+                  <FontBrush>
+                    <SolidColorBrush>
+                      <Color A="1" R="0" G="0" B="0"></Color>
+                    </SolidColorBrush>
+                  </FontBrush>
+                </FontInfo>
+              </TextSpan>
+            </LineTextSpan>
+          </FormattedText>
+          <ObjectLayout>
+            <DYMOPoint>
+              <X>0.1</X>
+              <Y>0.1881604</Y>
+            </DYMOPoint>
+            <Size>
+              <Width>0.8250001</Width>
+              <Height>0.2990725</Height>
+            </Size>
+          </ObjectLayout>
+        </TextObject>
+        <TextObject>
+          <Name>ITextObject2</Name>
+          <Brushes>
+            <BackgroundBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BackgroundBrush>
+            <BorderBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BorderBrush>
+            <StrokeBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </StrokeBrush>
+            <FillBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </FillBrush>
+          </Brushes>
+          <Rotation>Rotation0</Rotation>
+          <OutlineThickness>1</OutlineThickness>
+          <IsOutlined>False</IsOutlined>
+          <BorderStyle>SolidLine</BorderStyle>
+          <Margin>
+            <DYMOThickness Left="0" Top="0" Right="0" Bottom="0" />
+          </Margin>
+          <HorizontalAlignment>Left</HorizontalAlignment>
+          <VerticalAlignment>Top</VerticalAlignment>
+          <FitMode>None</FitMode>
+          <IsVertical>False</IsVertical>
+          <FormattedText>
+            <FitMode>None</FitMode>
+            <HorizontalAlignment>Left</HorizontalAlignment>
+            <VerticalAlignment>Top</VerticalAlignment>
+            <IsVertical>False</IsVertical>
+            <LineTextSpan>
+              <TextSpan>
+                <Text># ${scannedEntry.judgingNumber}</Text>
+                <FontInfo>
+                  <FontName>Segoe UI</FontName>
+                  <FontSize>10</FontSize>
+                  <IsBold>True</IsBold>
+                  <IsItalic>False</IsItalic>
+                  <IsUnderline>False</IsUnderline>
+                  <FontBrush>
+                    <SolidColorBrush>
+                      <Color A="1" R="0" G="0" B="0"></Color>
+                    </SolidColorBrush>
+                  </FontBrush>
+                </FontInfo>
+              </TextSpan>
+            </LineTextSpan>
+          </FormattedText>
+          <ObjectLayout>
+            <DYMOPoint>
+              <X>0.1</X>
+              <Y>0.5</Y>
+            </DYMOPoint>
+            <Size>
+              <Width>0.81</Width>
+              <Height>0.2223911</Height>
+            </Size>
+          </ObjectLayout>
+        </TextObject>
+        <TextObject>
+          <Name>ITextObject3</Name>
+          <Brushes>
+            <BackgroundBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BackgroundBrush>
+            <BorderBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </BorderBrush>
+            <StrokeBrush>
+              <SolidColorBrush>
+                <Color A="1" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </StrokeBrush>
+            <FillBrush>
+              <SolidColorBrush>
+                <Color A="0" R="0" G="0" B="0"></Color>
+              </SolidColorBrush>
+            </FillBrush>
+          </Brushes>
+          <Rotation>Rotation0</Rotation>
+          <OutlineThickness>1</OutlineThickness>
+          <IsOutlined>False</IsOutlined>
+          <BorderStyle>SolidLine</BorderStyle>
+          <Margin>
+            <DYMOThickness Left="0" Top="0" Right="0" Bottom="0" />
+          </Margin>
+          <HorizontalAlignment>Left</HorizontalAlignment>
+          <VerticalAlignment>Top</VerticalAlignment>
+          <FitMode>None</FitMode>
+          <IsVertical>False</IsVertical>
+          <FormattedText>
+            <FitMode>None</FitMode>
+            <HorizontalAlignment>Left</HorizontalAlignment>
+            <VerticalAlignment>Top</VerticalAlignment>
+            <IsVertical>False</IsVertical>
+            <LineTextSpan>
+              <TextSpan>
+                <Text>${scannedEntry[boxId] && boxId !== "records" ? "Box:" : ""}${scannedEntry[boxId] || ""} Cat:${scannedEntry.category}${scannedEntry.subcat}</Text>
+                <FontInfo>
+                  <FontName>Segoe UI</FontName>
+                  <FontSize>8</FontSize>
+                  <IsBold>False</IsBold>
+                  <IsItalic>False</IsItalic>
+                  <IsUnderline>False</IsUnderline>
+                  <FontBrush>
+                    <SolidColorBrush>
+                      <Color A="1" R="0" G="0" B="0"></Color>
+                    </SolidColorBrush>
+                  </FontBrush>
+                </FontInfo>
+              </TextSpan>
+            </LineTextSpan>
+            <LineTextSpan>
+              <TextSpan>
+                <Text>${boxId === 'record' ? "FOR RECORDS" : (scannedEntry[boxId] === null || scannedEntry[boxId] === undefined) ? "SPARE ENTRY" : boxId === 'box3' ? "Flight: 2nd Round" : boxId === 'box4' ? "Flight: BOS" : "FlightID: " + scannedEntry.flight}</Text>
+                <FontInfo>
+                  <FontName>Segoe UI</FontName>
+                  <FontSize>8</FontSize>
+                  <IsBold>False</IsBold>
+                  <IsItalic>False</IsItalic>
+                  <IsUnderline>False</IsUnderline>
+                  <FontBrush>
+                    <SolidColorBrush>
+                      <Color A="1" R="0" G="0" B="0"></Color>
+                    </SolidColorBrush>
+                  </FontBrush>
+                </FontInfo>
+              </TextSpan>
+            </LineTextSpan>
+          </FormattedText>
+          <ObjectLayout>
+            <DYMOPoint>
+              <X>0.1</X>
+              <Y>0.6609275</Y>
+            </DYMOPoint>
+            <Size>
+              <Width>0.8250001</Width>
+              <Height>0.2990725</Height>
+            </Size>
+          </ObjectLayout>
+        </TextObject>
+      </LabelObjects>
+    </DynamicLayoutManager>
+  </DYMOLabel>
+  <LabelApplication>Blank</LabelApplication>
+  <DataTable>
+    <Columns></Columns>
+    <Rows></Rows>
+  </DataTable>
+</DesktopLabel>
+`
