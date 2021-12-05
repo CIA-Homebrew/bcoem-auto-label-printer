@@ -87,6 +87,7 @@ const printDymo = (scannedEntry) => {
     label = dymo.label.framework.openLabelXml(generatedXML)
 
     if (dymoPrinter) {
+      console.log(generatedXML)
       label.print(dymoPrinter)
     }
   })
