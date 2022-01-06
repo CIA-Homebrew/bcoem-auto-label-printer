@@ -50,13 +50,27 @@
         <button id="BcoemConnectButton" class="btn btn-primary">Connect</button>
       </div>
 
-      <div class="col-2"></div>
-
-      <div class="col-4 d-flex flex-column align-items-center justify-content-around my-5">
+      <div class="col-2 d-flex flex-column align-items-center justify-content-around my-5">
         <div class="alert alert-warning" id="connectionStatus" role="alert">
           Disconnected
         </div>
         <div class="alert alert-danger" id="checkInStatus" role="alert" hidden></div>
+      </div>
+
+      <div class='col-1'></div>
+
+      <div class="col-4">
+        <h2>System Information</h2>
+        <div class="mb-5">
+          <label for="systemId" class="form-label">System ID</label>
+          <input type="text" class="form-control" id="systemId" value="1">
+        </div>
+
+        <div class="mb-5">
+          Current Counter Value: <span class="alert alert-info" id="currentCounterVal" role="alert">1-A2F</span>
+        </div>
+
+        <button id="resetCounterButton" class="btn btn-danger">Reset Counter</button>
       </div>
     </div>
   </div>
