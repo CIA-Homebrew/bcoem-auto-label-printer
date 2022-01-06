@@ -1,17 +1,19 @@
 const MapUploadToKeys = {
   entryNumber: "Entry Number",
   judgingNumber: "Judging Number",
-  category: "Category Sort",
-  subcat: "Sub Category",
+  category: "Category",
+  subcat: "Sub",
   flight: "Flight",
-  box1:  "Bottle 1 Box",
-  box2:  "Bottle 2 Box",
-  box3:  "Bottle 3 box (2-rd)",
-  box4:  "Bottle 4 box (3-rd)",
+  box1:  "Box 1",
+  box2:  "Box 2",
+  box3:  "Box 3",
+  box4:  "Box 4",
   checkedIn: "Checked In"
 }
-const boxes = ['box1', 'box2', 'box3', 'box4', 'record']
+// const boxes = ['box1', 'box2', 'box3', 'box4', 'record']
+const boxes = ['box1', 'box2', 'box3', 'box4']
 const Entries = JSON.parse(localStorage.getItem('Entries')) || {}
+let entryUuidCounterVal = parseInt(localStorage.getItem('uuidCounter')) || 0
 let bcoemConnected = false;
 let bcoemWindow = null;
 let dymoConnected = false;
@@ -80,7 +82,16 @@ const printDefault = (scannedEntry) => {
 }
 
 const printDymo = (scannedEntry) => {
+  const systemId = $("#systemId").val()
+  let audit = [systemId]
+  
   boxes.forEach(boxId => {
+    scannedEntry.uuid = `${systemId}-${entryUuidCounterVal.toString(16)}`
+    audit.push(entryUuidCounterVal.toString(16))
+    entryUuidCounterVal = parseInt(entryUuidCounterVal) + 1
+    localStorage.setItem('uuidCounter', entryUuidCounterVal)
+    $("#currentCounterVal").text(entryUuidCounterVal)
+
     const generatedXML = generateLegacyXML(scannedEntry, boxId)
 
     label = dymo.label.framework.openLabelXml(generatedXML)
@@ -90,6 +101,9 @@ const printDymo = (scannedEntry) => {
       label.print(dymoPrinter)
     }
   })
+
+  Entries[scannedEntry.entryNumber].audit = audit.join("-")
+  localStorage.setItem('Entries', JSON.stringify(Entries))
 }
 
 $(document).ready(() => {
@@ -111,6 +125,7 @@ $(document).ready(() => {
     }
   }
 
+  $("#currentCounterVal").text(entryUuidCounterVal)
   $('#scannerInput').focus()
 
   const table = $("#entry-table").DataTable({
@@ -201,7 +216,7 @@ $(document).ready(() => {
     let textOut = '"Entry Number","Check In Status"\n'
 
     Object.values(Entries).forEach(value => {
-      textOut += `"${value.entryNumber}","${value.checkedIn}"\n`
+      textOut += `"${value.entryNumber}","${value.checkedIn}","${value.audit}"\n`
     })
 
     const element = document.createElement('a');
@@ -241,6 +256,17 @@ $(document).ready(() => {
       $('#connectionStatus').text("Error: " + err)
       
     })
+  })
+
+  $('#resetCounterButton').on('click', () => {
+    const resetCounterVal = window.prompt("Please enter a new counter value", "0")
+
+    if (parseInt(resetCounterVal) != NaN && parseInt(resetCounterVal) >= 0) {
+      entryUuidCounterVal = parseInt(resetCounterVal)
+      localStorage.setItem('uuidCounter', entryUuidCounterVal)
+    } else {
+      window.alert("Could not parse value. Please enter a positive integer.")
+    }
   })
 
   $('#addManualEntry').on("click", () => {
@@ -402,6 +428,32 @@ const generateLegacyXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding
         <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
         <BackColor Alpha="0" Red="255" Green="255" Blue="255" />
         <LinkedObjectName></LinkedObjectName>
+        <Rotation>Rotation90</Rotation>
+        <IsMirrored>False</IsMirrored>
+        <IsVariable>False</IsVariable>
+        <HorizontalAlignment>Left</HorizontalAlignment>
+        <VerticalAlignment>Top</VerticalAlignment>
+        <TextFitMode>ShrinkToFit</TextFitMode>
+        <UseFullFontHeight>True</UseFullFontHeight>
+        <Verticalized>False</Verticalized>
+        <StyledText>
+          <Element>
+            <String>${scannedEntry.uuid}</String>
+            <Attributes>
+              <Font Family="Arial" Size="5" Bold="True" Italic="False" Underline="False" Strikeout="False" />
+              <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
+            </Attributes>
+          </Element>
+        </StyledText>
+      </TextObject>
+      <Bounds X="1500" Y="120" Width="300" Height="300" />
+    </ObjectInfo>
+    <ObjectInfo>
+      <TextObject>
+        <Name>Top Text</Name>
+        <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
+        <BackColor Alpha="0" Red="255" Green="255" Blue="255" />
+        <LinkedObjectName></LinkedObjectName>
         <Rotation>Rotation0</Rotation>
         <IsMirrored>False</IsMirrored>
         <IsVariable>False</IsVariable>
@@ -480,6 +532,32 @@ const generateLegacyXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding
         <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
         <BackColor Alpha="0" Red="255" Green="255" Blue="255" />
         <LinkedObjectName></LinkedObjectName>
+        <Rotation>Rotation90</Rotation>
+        <IsMirrored>False</IsMirrored>
+        <IsVariable>False</IsVariable>
+        <HorizontalAlignment>Left</HorizontalAlignment>
+        <VerticalAlignment>Top</VerticalAlignment>
+        <TextFitMode>ShrinkToFit</TextFitMode>
+        <UseFullFontHeight>True</UseFullFontHeight>
+        <Verticalized>False</Verticalized>
+        <StyledText>
+          <Element>
+            <String>${scannedEntry.uuid}</String>
+            <Attributes>
+              <Font Family="Arial" Size="5" Bold="True" Italic="False" Underline="False" Strikeout="False" />
+              <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
+            </Attributes>
+          </Element>
+        </StyledText>
+      </TextObject>
+      <Bounds X="1500" Y="840" Width="300" Height="300" />
+    </ObjectInfo>
+    <ObjectInfo>
+      <TextObject>
+        <Name>Top Text</Name>
+        <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
+        <BackColor Alpha="0" Red="255" Green="255" Blue="255" />
+        <LinkedObjectName></LinkedObjectName>
         <Rotation>Rotation0</Rotation>
         <IsMirrored>False</IsMirrored>
         <IsVariable>False</IsVariable>
@@ -500,30 +578,28 @@ const generateLegacyXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding
       </TextObject>
       <Bounds X="144" Y="1120" Width="1440" Height="300" />
     </ObjectInfo>
+
     <ObjectInfo>
-      <TextObject>
-        <Name>Top Text</Name>
-        <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
-        <BackColor Alpha="0" Red="255" Green="255" Blue="255" />
-        <LinkedObjectName></LinkedObjectName>
-        <Rotation>Rotation0</Rotation>
-        <IsMirrored>False</IsMirrored>
-        <IsVariable>False</IsVariable>
-        <HorizontalAlignment>Left</HorizontalAlignment>
-        <VerticalAlignment>Top</VerticalAlignment>
-        <TextFitMode>ShrinkToFit</TextFitMode>
-        <UseFullFontHeight>True</UseFullFontHeight>
-        <Verticalized>False</Verticalized>
-        <StyledText>
-          <Element>
-            <String>${boxId === 'record' ? "FOR RECORDS" : (scannedEntry[boxId] === null || scannedEntry[boxId] === undefined) ? "SPARE ENTRY" : boxId === 'box3' ? "Flight: 2nd Round" : boxId === 'box4' ? "Flight: BOS" : "FlightID: " + scannedEntry.flight}</String>
-            <Attributes>
-              <Font Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False" />
-              <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
-            </Attributes>
-          </Element>
-        </StyledText>
-      </TextObject>
-      <Bounds X="144" Y="1308" Width="1440" Height="120" />
+      <BarcodeObject>
+          <Name>Barcode</Name>
+          <ForeColor Alpha="255" Red="0" Green="0" Blue="0" />
+          <BackColor Alpha="0" Red="255" Green="255" Blue="255" />
+          <Rotation>Rotation0</Rotation>
+          <IsMirrored>False</IsMirrored>
+          <IsVariable>True</IsVariable>
+          <Text>${scannedEntry.uuid}</Text>
+          <Type>Code128Auto</Type>
+          <Size>Small</Size>
+          <TextPosition>None</TextPosition>
+          <TextFont Family="Arial" Size="8" Bold="False" Italic="False"
+                          Underline="False" Strikeout="False" />
+          <CheckSumFont Family="Arial" Size="8" Bold="False" Italic="False"
+                              Underline="False" Strikeout="False" />
+          <TextEmbedding>None</TextEmbedding>
+          <ECLevel>0</ECLevel>
+          <HorizontalAlignment>Center</HorizontalAlignment>
+          <QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0" />
+      </BarcodeObject>
+      <Bounds X="0" Y="1308" Width="1200" Height="120" />
     </ObjectInfo>
   </DieCutLabel>`
