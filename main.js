@@ -82,11 +82,15 @@ const printDefault = (scannedEntry) => {
 }
 
 const printDymo = (scannedEntry) => {
+  if ($("#systemId").val().length != 1) {
+    window.alert("Invalid system ID. System ID must be a single character!")
+    return
+  }
   const systemId = $("#systemId").val()
   let audit = [systemId]
   
   boxes.forEach(boxId => {
-    scannedEntry.uuid = `${systemId}-${entryUuidCounterVal.toString(16)}`
+    scannedEntry.uuid = `${systemId}${entryUuidCounterVal.toString(16)}`
     audit.push(entryUuidCounterVal.toString(16))
     entryUuidCounterVal = parseInt(entryUuidCounterVal) + 1
     localStorage.setItem('uuidCounter', entryUuidCounterVal)
@@ -498,7 +502,7 @@ const generateLegacyXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding
           </Element>
         </StyledText>
       </TextObject>
-      <Bounds X="144" Y="588" Width="1440" Height="300" />
+      <Bounds X="144" Y="578" Width="1440" Height="300" />
     </ObjectInfo>
     <ObjectInfo>
       <TextObject>
@@ -576,7 +580,7 @@ const generateLegacyXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding
           </Element>
         </StyledText>
       </TextObject>
-      <Bounds X="144" Y="1120" Width="1440" Height="300" />
+      <Bounds X="144" Y="1025" Width="1440" Height="125" />
     </ObjectInfo>
 
     <ObjectInfo>
@@ -600,6 +604,6 @@ const generateLegacyXML = (scannedEntry, boxId) => `<?xml version="1.0" encoding
           <HorizontalAlignment>Center</HorizontalAlignment>
           <QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0" />
       </BarcodeObject>
-      <Bounds X="0" Y="1308" Width="1200" Height="120" />
+      <Bounds X="0" Y="1200" Width="1200" Height="250" />
     </ObjectInfo>
   </DieCutLabel>`
