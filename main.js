@@ -14,6 +14,7 @@ const MapUploadToKeys = {
 const boxes = ['box1', 'box2', 'box3', 'box4']
 const Entries = JSON.parse(localStorage.getItem('Entries')) || {}
 let entryUuidCounterVal = parseInt(localStorage.getItem('uuidCounter')) || 0
+let systemId = localStorage.getItem('systemId') || "1"
 let bcoemConnected = false;
 let bcoemWindow = null;
 let dymoConnected = false;
@@ -82,11 +83,6 @@ const printDefault = (scannedEntry) => {
 }
 
 const printDymo = (scannedEntry) => {
-  if ($("#systemId").val().length != 1) {
-    window.alert("Invalid system ID. System ID must be a single character!")
-    return
-  }
-  const systemId = $("#systemId").val()
   let audit = [systemId]
   
   boxes.forEach(boxId => {
@@ -130,6 +126,7 @@ $(document).ready(() => {
   }
 
   $("#currentCounterVal").text(entryUuidCounterVal)
+  $("#currentSystemId").text(systemId)
   $('#scannerInput').focus()
 
   const table = $("#entry-table").DataTable({
@@ -268,9 +265,22 @@ $(document).ready(() => {
     if (parseInt(resetCounterVal) != NaN && parseInt(resetCounterVal) >= 0) {
       entryUuidCounterVal = parseInt(resetCounterVal)
       localStorage.setItem('uuidCounter', entryUuidCounterVal)
+      $("#currentCounterVal").text(entryUuidCounterVal)
     } else {
       window.alert("Could not parse value. Please enter a positive integer.")
     }
+  })
+
+  $('#resetSystemIdButton').on('click', () => {
+    const newSystemId = window.prompt("Please enter a new system ID. System ID must be a single character.", "1")
+
+    if (newSystemId.length != 1) {
+      window.alert("Invalid system ID. System ID must be a single character!")
+      return
+    }
+
+    localStorage.setItem('systemId', newSystemId)
+    $("#currentSystemId").text(newSystemId)
   })
 
   $('#addManualEntry').on("click", () => {
@@ -359,14 +369,7 @@ $(document).ready(() => {
         const box2 = row[headers.indexOf(MapUploadToKeys.box2)]
         const box3 = row[headers.indexOf(MapUploadToKeys.box3)]
         const box4 = row[headers.indexOf(MapUploadToKeys.box4)]
-
-        const catNumber = String(row[headers.indexOf(MapUploadToKeys.category)]).charAt(0) === 'M' ?
-          String(Number(String(row[headers.indexOf(MapUploadToKeys.category)]).charAt(1)) + 34).padStart(2, "0") :
-          String(row[headers.indexOf(MapUploadToKeys.category)]).padStart(2, "0")
-
-        const flightId = catNumber + 
-          String(row[headers.indexOf(MapUploadToKeys.flight)]).padStart(2, "0") + 
-          String(Number(catNumber) + Number(row[headers.indexOf(MapUploadToKeys.flight)])).padStart(2, "0")
+        const flightId = row[headers.indexOf(MapUploadToKeys.flight)]
 
         Entries[entryNumber] = {
           entryNumber,
