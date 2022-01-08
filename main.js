@@ -141,7 +141,7 @@ $(document).ready(() => {
   $('#scannerInput').keyup((evt) => {
     if (evt.which !== 13) return 
 
-    const scannerInput = $('#scannerInput').val()
+    const scannerInput = $('#scannerInput').val().padStart(6, "0")
     const scannedEntry = Entries[scannerInput]
     $('#scannerInput').val('')
 
