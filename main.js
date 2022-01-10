@@ -279,6 +279,7 @@ $(document).ready(() => {
       return
     }
 
+    systemId = newSystemId
     localStorage.setItem('systemId', newSystemId)
     $("#currentSystemId").text(newSystemId)
   })
