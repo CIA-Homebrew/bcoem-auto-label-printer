@@ -1,0 +1,32 @@
+{
+  "name": "bcoem-auto-label-printer",
+  "version": "0.1.0",
+  "description": "Auto label printer for bcoem check in",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development node index.js",
+    "start": "NODE_ENV=production node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CIA-Homebrew/bcoem-auto-label-printer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CIA-Homebrew/bcoem-auto-label-printer/issues"
+  },
+  "homepage": "https://github.com/CIA-Homebrew/bcoem-auto-label-printer#readme",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2",
+    "mysql2": "^2.3.3",
+    "node-fetch": "^2.6.7",
+    "sequelize": "^6.27.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "sqlite3": "^5.1.4"
+  }
+}
