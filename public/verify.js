@@ -23,7 +23,7 @@ const generateTable = (allEntries) => {
 const generateEntryRow = (entry) => {
   const currentBoxNumber = $('#boxIdInput').val()
   const boxId = allBoxes.filter(box => entry[box] === currentBoxNumber)[0]
-  const currentAuditId = entry.checkedIn ? entry.auditId[allBoxes.indexOf(boxId)] : ""
+  const currentAuditId = entry.checkedIn ? JSON.parse(entry.auditId)[allBoxes.indexOf(boxId)] : ""
 
   return `<li class="list-group-item box-audit-list" entrynumber="${entry.entryNumber}">
     <div class="row">

@@ -9,7 +9,7 @@ const Database = require('./db')
 const BCOEM = require('./bcoem')
 
 const app = express()
-const port = 3000
+let port = 3000
 
 let sequelize
 
@@ -29,6 +29,7 @@ if (process.env.NODE_ENV === "development") {
       dialect: 'mysql'
     }
   );
+  port = 80
 }
 
 [Entry, Instance] = Database.init(sequelize)
@@ -325,7 +326,7 @@ app.post('/updateuuid', passphraseMiddleware, async (req, res) => {
     }
   })
 
-  const newAudit = [...originalEntry.auditId]
+  const newAudit = JSON.parse(originalEntry.auditId)
 
   newAudit[originalEntry.auditId.indexOf(originalAuditId)] = updatedAuditId
 

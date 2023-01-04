@@ -84,7 +84,7 @@ Database.init = (sequelize) => {
   Entry.belongsTo(Instance, { as: "Instance", constraints: false, foreignKey: "instancePrefix"})
   Instance.hasMany(Entry, {as: "Entry", constraints: false, foreignKey: 'instancePrefix'})
   
-  sequelize.sync({force: true}) 
+  sequelize.sync() 
 
   return [
     Entry,
