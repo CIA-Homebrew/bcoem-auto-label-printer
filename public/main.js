@@ -86,7 +86,7 @@ const printDefault = (scannedEntry) => {
 
 const printDymo = (scannedEntry) => {
   boxes.forEach((boxId, idx) => {
-    scannedEntry.uuid = scannedEntry.auditId[idx]
+    scannedEntry.uuid = JSON.parse(scannedEntry.auditId)[idx]
     const generatedXML = generateLegacyXML(scannedEntry, boxId)
 
     label = dymo.label.framework.openLabelXml(generatedXML)
